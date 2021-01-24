@@ -3,12 +3,13 @@ from typing import List
 
 import requests
 import pymysql
-from datetime import datetime
+import time
 from dotenv import load_dotenv
 
+from NewsParser.NewsParser.settings import BASE_DIR
 
 # path to .env file
-dotenv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), '.env')
+dotenv_path = os.path.join(BASE_DIR, '.env')
 
 if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
@@ -47,7 +48,7 @@ def get_news(items_id: List[int]) -> List[dict]:
         data = req.json()
 
         if 'title' in data and 'url' in data:
-            new = dict(title=data['title'], url=data['url'], created=datetime.now())
+            new = dict(title=data['title'], url=data['url'])
             news.append(new)
 
         if len(news) == 30:
@@ -77,7 +78,7 @@ def save_news(news: List[dict]) -> None:
         # Create a new record
         for new in news:
             sql = "INSERT INTO news_news (title, url, created) VALUES (%s, %s, %s)"
-            date = datetime.now()
+            date = time.strftime('%Y-%m-%d %H:%M:%S')
             cursor.execute(sql, (new['title'], new['url'], date))
 
     connection.commit()
