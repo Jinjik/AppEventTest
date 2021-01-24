@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from typing import List
 
 import requests
@@ -6,10 +7,8 @@ import pymysql
 import time
 from dotenv import load_dotenv
 
-from NewsParser.NewsParser.settings import BASE_DIR
-
 # path to .env file
-dotenv_path = os.path.join(BASE_DIR, '.env')
+dotenv_path = os.path.join(Path(__file__).resolve().parent.parent.parent, '.env')
 
 if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
@@ -51,7 +50,7 @@ def get_news(items_id: List[int]) -> List[dict]:
             new = dict(title=data['title'], url=data['url'])
             news.append(new)
 
-        if len(news) == 30:
+        if len(news) == 5:
             break
 
     return news
@@ -75,6 +74,7 @@ def save_news(news: List[dict]) -> None:
                                  charset='utf8mb4',
                                  cursorclass=pymysql.cursors.DictCursor)
     with connection.cursor() as cursor:
+
         # Create a new record
         for new in news:
             sql = "INSERT INTO news_news (title, url, created) VALUES (%s, %s, %s)"
@@ -84,7 +84,20 @@ def save_news(news: List[dict]) -> None:
     connection.commit()
 
 
-def main():
-    items_id = get_items_id()
-    news = get_news(items_id)
-    save_news(news)
+def main() -> str:
+    """Main function for run parser
+
+    Returns:
+        Message about status update news
+
+    """
+    try:
+        items_id = get_items_id()
+        news = get_news(items_id)
+        save_news(news)
+    except TypeError:
+        return 'Сервер не вернул список новостей!'
+    except pymysql.err.OperationalError:
+        return 'Не получилось соедениться с базой данных!'
+    else:
+        return 'Список новостей успешно обновлён!'
